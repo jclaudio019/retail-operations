@@ -1,0 +1,5 @@
+# Ignore all local data files
+data/
+
+# Keep the folder structure in Git
+!data/.gitkeep
