@@ -1,0 +1,15 @@
+# Local datasets
+data/*
+
+# Preserve the folder structure
+!data/.gitkeep
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# macOS files
+.DS_Store
