@@ -1,51 +1,94 @@
-# Retail Operations Analytics
+# Retail Demand and POS Forecasting
 
-A portfolio project focused on retail demand forecasting, replenishment planning, and inventory allocation using the M5 retail dataset.
+A portfolio project that forecasts daily point-of-sale demand from the M5
+Forecasting dataset. The work is intentionally focused on clear, reproducible,
+category-level forecasting—not inventory optimization.
 
-## Project Overview
+## Scope
 
-Retail operations teams must balance product availability with inventory cost. Forecasting too low can contribute to stockouts and lost sales, while forecasting too high can create excess inventory and inefficient allocation.
+The project models daily unit sales (`y`) by calendar date (`ds`) for:
 
-This project builds an end-to-end retail analytics workflow that begins with category-level demand forecasting and later extends toward SKU-store forecasting, replenishment logic, and allocation decisions.
+- `FOODS`
+- `HOBBIES`
+- `HOUSEHOLD`
 
-The project is intentionally developed in stages so that each modeling decision can be compared against a simple and defensible benchmark.
+It covers data preparation, exploratory analysis, baseline and feature-based
+forecasting, rolling validation, model comparison, and one final evaluation on
+an untouched test period.
 
-## Business Problem
+Inventory allocation, replenishment recommendations, safety-stock decisions,
+and distribution optimization are outside this repository. A future, separate
+allocation template may consume these forecasts, but it is not part of this
+project.
 
-The core business question is:
+## Business question
 
-> How can historical POS demand be translated into reliable forecasts and operational replenishment decisions?
+> How accurately can historical point-of-sale demand forecast future daily
+> category-level unit sales?
 
-The project addresses several related questions:
-
-- How does demand behavior differ across retail categories?
-- Which simple forecasting methods provide the strongest baseline?
-- How much do seasonality, holidays, and events affect forecast accuracy?
-- Which categories are easier or harder to forecast?
-- How can forecast outputs support replenishment and allocation decisions?
-- How should forecasting methods change when moving from category-level demand to SKU-store demand?
-
-## Project Objectives
-
-1. Prepare reusable retail demand datasets.
-2. Explore category-level trends, seasonality, volatility, and calendar effects.
-3. Build baseline forecasts for `FOODS`, `HOBBIES`, and `HOUSEHOLD`.
-4. Evaluate forecasts using MAE, WAPE, and bias.
-5. Compare simple baselines against statistical and feature-aware models.
-6. Extend the workflow to SKU-store forecasting.
-7. Translate forecasts into replenishment and allocation logic.
+The analysis examines trend, weekly seasonality, holidays, events, and the
+relative accuracy and stability of several forecasting approaches.
 
 ## Dataset
 
-This project uses the M5 Forecasting dataset, which contains historical daily unit sales from Walmart stores across multiple states and product categories.
+The project uses the M5 Forecasting dataset, which provides Walmart daily sales
+history, product and store hierarchy, calendar events, SNAP indicators, and
+selling prices. Modeling data is aggregated to one row per category and date:
 
-The dataset includes:
+```text
+ds | cat_id | y
+```
 
-- Daily unit sales
-- Product hierarchy
-- Store and state hierarchy
-- Calendar events
-- SNAP indicators
-- Selling prices
+## Workflow
 
-The first modeling stage uses processed category-level datasets created during data preparation and exploratory analysis.
+| Notebook | Purpose |
+| --- | --- |
+| `00_data_preparation.ipynb` | Load and validate the joined M5 source data. |
+| `01_data_exploration.ipynb` | Create category-day views and examine distributions, seasonality, and events. |
+| `02_baseline_forecasting.ipynb` | Compare Naive, Seasonal Naive, 7-Day SMA, and ETS on an initial holdout. |
+| `03_forecast_validation.ipynb` | Compare baselines with expanding-window, calendar-month validation. |
+| `04_linear_regression.ipynb` | Evaluate recursive Linear Regression with time-series and calendar features. |
+| `05_prophet.ipynb` | Evaluate Prophet with seasonality, holidays, and limited tuning. |
+| `06_xgboost.ipynb` | Evaluate recursive XGBoost with the shared feature structure. |
+| `07_model_comparison.ipynb` | Select the best validated model per category, refit it on train plus validation data, and evaluate it once on the untouched test set. |
+
+## Validation approach
+
+The data uses a strict chronological split:
+
+```text
+Train:      2011-01-29 through 2014-06-20
+Validation: 2014-06-21 through 2015-06-20
+Test:       2015-06-21 through 2016-06-19
+```
+
+Validation uses 13 calendar-aligned, expanding windows across 365 days. Each
+model is refitted using only data available before a window and forecasts that
+window without using future actuals. Models are selected by validation results,
+then evaluated once on the untouched test period.
+
+## Evaluation metrics
+
+- MAE
+- RMSE
+- WAPE (%)
+
+Models are compared on mean error and stability across validation windows.
+
+## Current status
+
+Data preparation, exploration, baseline forecasting, and baseline rolling
+validation are complete. ETS is the leading baseline candidate across the
+current category-level validation results. Linear Regression, Prophet, XGBoost,
+and final model comparison remain.
+
+## Reproducibility
+
+Run the notebooks in numerical order. The M5 source data is stored under
+`data/m5/datasets/`, and derived files are written under `data/processed/`.
+Those data files are local and intentionally excluded from Git.
+
+## Limitations
+
+- Results are at the category level, not the SKU-store level.
+- Forecasting demand does not prescribe inventory or allocation actions.
