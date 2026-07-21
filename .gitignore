@@ -1,5 +1,0 @@
-# Ignore everything inside data
-data/*
-
-# Keep the data folder in Git
-!data/.gitkeep
