@@ -48,9 +48,10 @@ ds | cat_id | y
 | `02_baseline_forecasting.ipynb` | Compare Naive, Seasonal Naive, 7-Day SMA, and ETS on an initial holdout. |
 | `03_forecast_validation.ipynb` | Compare baselines with expanding-window, calendar-month validation. |
 | `04_linear_regression.ipynb` | Evaluate recursive Linear Regression with time-series and calendar features. |
-| `05_prophet.ipynb` | Evaluate Prophet with seasonality, holidays, and limited tuning. |
-| `06_xgboost.ipynb` | Evaluate recursive XGBoost with the shared feature structure. |
-| `07_model_comparison.ipynb` | Select the best validated model per category, refit it on train plus validation data, and evaluate it once on the untouched test set. |
+| `05_prophet_model.ipynb` | Evaluate Prophet with seasonality, holidays, and limited tuning. |
+| `06_xgboost_model.ipynb` | Evaluate recursive XGBoost with the shared feature structure. |
+| `07_model_comparison.ipynb` | Compare all pre-specified models and evaluate them once on the untouched test set. |
+| `Final_Report.md` | Summarize business findings, final test results, trade-offs, and limitations. |
 
 ## Validation approach
 
@@ -77,10 +78,11 @@ Models are compared on mean error and stability across validation windows.
 
 ## Current status
 
-Data preparation, exploration, baseline forecasting, and baseline rolling
-validation are complete. ETS is the leading baseline candidate across the
-current category-level validation results. Linear Regression, Prophet, XGBoost,
-and final model comparison remain.
+All notebooks are complete. The final report shows that XGBoost produced the
+lowest observed test WAPE for `FOODS`, XGBoost was narrowly lowest for
+`HOBBIES`, and Linear Regression was lowest for `HOUSEHOLD`. Model selection
+was frozen during validation; the final test table is reported as an unbiased,
+one-time comparison.
 
 ## Reproducibility
 
