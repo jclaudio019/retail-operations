@@ -2,9 +2,11 @@
 
 ## Executive summary
 
-This project tested whether historical point-of-sale demand can forecast daily category-level unit sales for `FOODS`, `HOBBIES`, and `HOUSEHOLD`.
+Retail teams need a reliable view of expected daily demand before they can plan staffing, inventory reviews, and other downstream operations. Using recent sales alone can miss recurring weekly patterns, changes in demand level, and known calendar disruptions.
 
-The answer is yes. Every advanced model improved on the Naive benchmark during the untouched 365-day test period. The best observed test WAPE by category was:
+This project addresses that forecasting problem for daily point-of-sale unit sales in the `FOODS`, `HOBBIES`, and `HOUSEHOLD` categories. It delivers a leakage-safe category-level demand forecasting process: historical sales are evaluated with expanding-window validation, then pre-specified models are compared once on an untouched 365-day test period.
+
+Every evaluated alternative improved on the Naive benchmark. The best observed test WAPE by category was:
 
 | Category | Best observed test model | Test WAPE | Improvement versus Naive |
 |---|---|---:|---:|
@@ -12,7 +14,7 @@ The answer is yes. Every advanced model improved on the Naive benchmark during t
 | HOBBIES | XGBoost Shallow | 8.00% | 9.47 percentage points |
 | HOUSEHOLD | Linear Regression (Full) | 7.05% | 12.83 percentage points |
 
-The results also show that more complex models are not automatically more valuable. XGBoost produced the lowest observed error for `FOODS`, but ETS was close with less complexity. For `HOBBIES`, XGBoost, Prophet, and ETS were almost tied. For `HOUSEHOLD`, Linear Regression performed best on the test period.
+The business takeaway is category-specific: XGBoost achieved the lowest observed error for `FOODS`, but ETS was nearly as accurate with less complexity. For `HOBBIES`, several approaches were effectively tied. For `HOUSEHOLD`, Linear Regression performed best. The project therefore shows that model complexity should be justified by category-level value, not assumed to be better.
 
 ## Business questions answered
 
@@ -106,6 +108,52 @@ The validation winners were frozen before test evaluation. Their test errors wer
 
 The lowest observed test model differs from the validation-selected model for `HOBBIES` and `HOUSEHOLD`. This is an important finding, not a reason to tune again on the test period. Before changing the validated choice for a live use case, these alternatives should be assessed on a new future holdout period.
 
+## Operational and financial interpretation
+
+Forecast accuracy matters because it changes two operational exposures. For each category-day, the forecast residual is `actual − forecast`:
+
+- A positive residual is an under-forecast. If inventory were limited to the forecast, the difference represents demand that could not be filled.
+- A negative residual is an over-forecast. It represents inventory that would remain on hand after demand was met.
+
+The table below applies that inventory-constrained scenario to the fixed test forecasts. It values units at the daily sales-weighted M5 `sell_price`. The dollar figures are **retail-value exposure**, not realized lost revenue, cash tied up, or profit: the dataset does not contain unit cost, gross margin, inventory availability, carrying cost, markdowns, substitutions, or backorders.
+
+| Category | Model | Under-forecast units | Potential missed-sales retail value | Over-forecast units | Excess-inventory retail value |
+|---|---|---:|---:|---:|---:|
+| FOODS | Naive | 415,148 | $1.09M | 1,150,579 | $3.01M |
+| FOODS | ETS | 830,705 | $2.18M | 209,461 | $0.54M |
+| FOODS | XGBoost Faster | 696,729 | $1.82M | 296,956 | $0.78M |
+| HOBBIES | Naive | 25,534 | $0.11M | 225,804 | $0.96M |
+| HOBBIES | ETS | 96,856 | $0.41M | 20,009 | $0.07M |
+| HOBBIES | XGBoost Shallow | 90,863 | $0.38M | 24,192 | $0.10M |
+| HOUSEHOLD | Naive | 114,353 | $0.46M | 595,585 | $2.30M |
+| HOUSEHOLD | ETS | 241,795 | $0.95M | 59,615 | $0.22M |
+| HOUSEHOLD | Linear Regression (Full) | 132,093 | $0.52M | 119,754 | $0.46M |
+
+These figures show why lower aggregate forecast error is not the whole decision. Naive forecasts leave much more inventory exposure in all three categories, while ETS sharply reduces that excess but can create more under-forecast exposure. The best observed model can improve the balance further, but its value is category-specific: for `HOBBIES`, the gap between ETS and XGBoost is small; for `HOUSEHOLD`, Linear Regression materially reduces under-forecast exposure relative to ETS.
+
+### Category priorities
+
+Average selling price helps put forecast error into business context, but it is not a margin measure. The table uses the same sales-weighted M5 `sell_price` values as the exposure analysis; actual margin, unit cost, and holding cost are not available in the dataset.
+
+| Category | Test-period units | Test-period retail value | Sales-weighted average unit price | Recommended focus |
+|---|---:|---:|---:|---|
+| FOODS | 9.73M | $25.49M | $2.62 | Highest volume and retail-value exposure. ETS is a credible simpler baseline, but its under-forecast and over-forecast trade-off should be optimized with weekday-level buffers before adding more model complexity. |
+| HOBBIES | 1.44M | $6.15M | $4.27 | Highest average selling price, but the observed ETS-to-XGBoost gap is small. Start with ETS and investigate further only if margin, stockout cost, promotions, or seasonal events make the small accuracy gain economically meaningful. |
+| HOUSEHOLD | 3.57M | $14.05M | $3.94 | Strongest candidate for deeper analysis. Linear Regression produces a better observed under-/over-forecast balance than ETS, so this category is worth examining by weekday, event, and high-value item group. |
+
+This suggests a practical next analysis: measure forecast error by weekday and business-critical demand periods, then set category-specific safety buffers from the cost of a stockout relative to the cost of carrying inventory. Where the data supports it, prediction intervals or forecast quantiles can set those buffers more directly than a single point forecast.
+
+In a production setting, the model should be chosen by minimizing total expected economic cost rather than forecast error alone:
+
+```text
+total forecast economic cost
+= under-forecast units × selling price × lost-sales rate × gross-margin rate
++ over-forecast units × unit cost × carrying-cost rate × expected holding period
++ expected markdown or obsolescence cost
+```
+
+This framework turns forecast improvement into an operational decision. It supports category-specific forecast adjustments or safety buffers when the cost of running short is higher than the cost of carrying extra inventory, while keeping those adjustments transparent and measurable.
+
 ## What each model contributed
 
 | Model | What it added | Main limitation |
@@ -134,10 +182,6 @@ The lowest observed test model differs from the validation-selected model for `H
 - Demand cannot be negative, so negative model predictions were clipped to zero.
 - The four small Prophet and XGBoost configuration sets are sufficient for a portfolio comparison; this is not an exhaustive hyperparameter search.
 - Final test scores are a fixed report of the pre-specified models. They are not used to tune model settings or retroactively change the validation selection rule.
-
-## Recommended next step
-
-Use these forecasts as an input to a separate, smaller allocation or replenishment project. That follow-on work should define its own service-level targets, lead times, inventory constraints, and decision rules rather than adding allocation logic to this forecasting project.
 
 ## Notebook map
 
