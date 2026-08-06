@@ -17,9 +17,9 @@ forecasting, rolling validation, model comparison, and one final evaluation on
 an untouched test period.
 
 Inventory allocation, replenishment recommendations, safety-stock decisions,
-and distribution optimization are outside this repository. A future, separate
-allocation template may consume these forecasts, but it is not part of this
-project.
+purchasing decisions, and distribution optimization are outside this
+repository. A future, separate allocation template may consume these forecasts,
+but it is not part of this project.
 
 ## Business question
 
@@ -81,8 +81,8 @@ Models are compared on mean error and stability across validation windows.
 All notebooks are complete. The final report shows that XGBoost produced the
 lowest observed test WAPE for `FOODS`, XGBoost was narrowly lowest for
 `HOBBIES`, and Linear Regression was lowest for `HOUSEHOLD`. Model selection
-was frozen during validation; the final test table is reported as an unbiased,
-one-time comparison.
+was frozen during validation; the final test table is reported as a transparent,
+one-time comparison on the untouched test period.
 
 ## Reproducibility
 
