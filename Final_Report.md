@@ -20,7 +20,7 @@ The business takeaway is category-specific: XGBoost achieved the lowest observed
 
 ### Can historical POS demand forecast future category demand accurately?
 
-Yes. The Naive model produced test WAPE values of 16.10% for `FOODS`, 17.47% for `HOBBIES`, and 19.88% for `HOUSEHOLD`. Every advanced approach reduced those errors. Historical demand therefore provides a useful basis for daily category-level forecasting.
+Yes. The Naive model produced test WAPE values of 16.10% for `FOODS`, 17.47% for `HOBBIES`, and 19.88% for `HOUSEHOLD`. Every non-naive approach reduced those errors. Historical demand therefore provides a useful basis for daily category-level forecasting.
 
 ### What demand patterns matter?
 
@@ -29,7 +29,7 @@ Yes. The Naive model produced test WAPE values of 16.10% for `FOODS`, 17.47% for
 - `FOODS` is relatively stable, `HOBBIES` is more variable, and `HOUSEHOLD` shows the clearest upward movement over time.
 - These patterns justify weekly seasonal baselines, calendar features, lag features, rolling averages, and holiday-aware models.
 
-### Do more advanced models improve on simple baselines?
+### Do statistical and machine-learning models improve on simple baselines?
 
 Yes, but the value depends on the category. ETS was the strongest baseline during rolling validation. Linear Regression, Prophet, and XGBoost were then tested using the same 13 expanding monthly validation windows before final test evaluation.
 
@@ -117,7 +117,7 @@ Forecast accuracy matters because it changes two operational exposures. For each
 
 The table below applies that inventory-constrained scenario to the fixed test forecasts. It values units at the daily sales-weighted M5 `sell_price`. The dollar figures are **retail-value exposure**, not realized lost revenue, cash tied up, or profit: the dataset does not contain unit cost, gross margin, inventory availability, carrying cost, markdowns, substitutions, or backorders.
 
-| Category | Model | Under-forecast units | Potential missed-sales retail value | Over-forecast units | Excess-inventory retail value |
+| Category | Model | Under-forecast units | Under-forecast retail-value exposure | Over-forecast units | Over-forecast retail-value exposure |
 |---|---|---:|---:|---:|---:|
 | FOODS | Naive | 415,148 | $1.09M | 1,150,579 | $3.01M |
 | FOODS | ETS | 830,705 | $2.18M | 209,461 | $0.54M |
@@ -129,7 +129,7 @@ The table below applies that inventory-constrained scenario to the fixed test fo
 | HOUSEHOLD | ETS | 241,795 | $0.95M | 59,615 | $0.22M |
 | HOUSEHOLD | Linear Regression (Full) | 132,093 | $0.52M | 119,754 | $0.46M |
 
-These figures show why lower aggregate forecast error is not the whole decision. Naive forecasts leave much more inventory exposure in all three categories, while ETS sharply reduces that excess but can create more under-forecast exposure. The best observed model can improve the balance further, but its value is category-specific: for `HOBBIES`, the gap between ETS and XGBoost is small; for `HOUSEHOLD`, Linear Regression materially reduces under-forecast exposure relative to ETS.
+These figures show why lower aggregate forecast error is not the whole decision. Naive forecasts leave much more over-forecast retail-value exposure in all three categories, while ETS sharply reduces that exposure but can create more under-forecast retail-value exposure. The best observed model can improve the balance further, but its value is category-specific: for `HOBBIES`, the gap between ETS and XGBoost is small; for `HOUSEHOLD`, Linear Regression materially reduces under-forecast retail-value exposure relative to ETS.
 
 ### Category priorities
 
