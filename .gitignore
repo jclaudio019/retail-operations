@@ -7,6 +7,9 @@ data/*
 # Jupyter temporary files
 .ipynb_checkpoints/
 
+# Editor project files
+.idea/
+
 # Python cache
 __pycache__/
 *.py[cod]
